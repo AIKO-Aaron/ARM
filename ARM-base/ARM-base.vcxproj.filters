@@ -21,6 +21,9 @@
     <ClInclude Include="src\arm\State.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="src\util\FileReader.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\arm\State.cpp">

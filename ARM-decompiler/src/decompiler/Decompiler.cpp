@@ -172,8 +172,6 @@ ARM::DecompiledInstr ARM::Decompiler::decompileARM(word instr) {
 		}
 	}
 
-	state->pc += 4;
-
 	return decompiled;
 }
 
@@ -424,7 +422,10 @@ ARM::DecompiledInstr ARM::Decompiler::decompileTHUMB(halfword instr) {
 		}
 	} 
 
-	state->pc += 2;
-
 	return decompiled;
+}
+
+ARM::DecompiledInstr ARM::Decompiler::decompileInstruction() {
+	if (IS_SET(state->cpsr, 5)) return decompileTHUMB(state->read16(state->pc));
+	else return decompileARM(state->read32(state->pc));
 }

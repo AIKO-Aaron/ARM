@@ -16,6 +16,6 @@ namespace ARM {
 
 		inline byte r8(word addr) { return memory[addr]; }
 		inline halfword r16(word addr) { return *(halfword*)(memory + addr); }
-		inline word r32(word addr) { return *(word*) (memory + addr); }
+		inline word r32(word addr) { return *(word*)(memory + addr); }
 	};
 }

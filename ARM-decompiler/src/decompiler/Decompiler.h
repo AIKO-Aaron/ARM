@@ -16,9 +16,8 @@ namespace ARM {
 		std::string arg0 = "";
 
 
-		inline DecompiledInstr print() {
-			printf("[DECOMPILER][INFO] %5s%2s %s\n", instr.c_str(), cond.c_str(), arg0.c_str());
-			return *this;
+		inline void print() {
+			printf("%5s%2s %s\n", instr.c_str(), cond.c_str(), arg0.c_str());
 		}
 	};
 
@@ -26,8 +25,11 @@ namespace ARM {
 	private:
 	public:
 		Decompiler(byte* m) : state(new State(m)) {}
+		Decompiler(State* s) : state(s) {}
 
 		State *state;
+
+		DecompiledInstr decompileInstruction();
 		DecompiledInstr decompileARM(word instr);
 		DecompiledInstr decompileTHUMB(halfword instr);
 	};
