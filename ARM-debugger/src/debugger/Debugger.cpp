@@ -1,5 +1,19 @@
 #include "Debugger.h"
 
+static void ARM::Debugger::setFlags(doubleword a, word b, word c, bool addone) {
+	if(a & 0x80000000) SET_FLAG(NEGATIVE_FLAG);
+	else CLEAR_FLAG(NEGATIVE_FLAG);
+
+	if((a & 0xFFFFFFFF) == 0) SET_FLAG(ZERO_FLAG);
+	else CLEAR_FLAG(ZERO_FLAG);
+
+	if(a & 0x100000000) SET_FLAG(CARRY_FLAG);
+	else CLEAR_FLAG(CARRY_FLAG);
+
+	if(((b & 0x7FFFFFFF) + (c & 0x7FFFFFFF) + (addone ? 1 : 0)) & 0x80000000) SET_FLAG(OVERFLOW_FLAG);
+	else CLEAR_FLAG(OVERFLOW_FLAG);
+}
+
 void ARM::Debugger::executeNextARM(word instr) {
 	printf("[ARM]   %.08X: ", instr);
 
@@ -18,7 +32,7 @@ void ARM::Debugger::executeNextARM(word instr) {
 				if (IS_SET(offset, 25)) offset |= 0xFC;
 
 				if (link) state->lr = state->pc + 4;
-				state->pc += 4 + offset; // 4 added later
+				state->pc += 4 + offset; // 4 added already
 			}
 		}
 	}
@@ -38,20 +52,27 @@ void ARM::Debugger::executeNextARM(word instr) {
 				byte Rd = (instr >> 12) & 0xF;
 				word offset = instr & 0xFFF;
 
-				decompiled.instr = load ? "LDR" : "STR";
-				if (isByte) decompiled.instr += "B";
-				//decompiled.arg0 = register_names[Rd] + ", [" + register_names[Rn];
+				word address = state->readReg(Rn);
 
 				if (imm || offset != 0) { // LDR/STR Rd, [Rn, Rm SHIFT/IMM]
-					if (Rn == 0xF) {
-						//decompiled.arg0 += "] ; =" + to_hex(state->read32(state->pc + offset + 8));
-					}
+					if (imm && Rn == 0xF) address += state->pc + offset + 4;
 					else {
-						//if (imm) decompiled.arg0 += ", " + register_names[offset & 0xF] + "...]";
-						//else decompiled.arg0 += ", #" + to_hex(offset, 0) + "]";
+						if(imm) {
+							word reg = state->readReg(offset & 0xF);
+							// TODO shift....
+							address += reg;
+						}
+						else address += offset;
 					}
 				}
-				else decompiled.arg0 += "]";
+
+				if(load) {
+					if(isByte) state->writeReg(Rd, state->read8(address));
+					else state->writeReg(Rd, state->read32(address));
+				} else {
+					if(isByte) state->write8(address, state->readReg(Rd));
+					else state->write32(address, state->readReg(Rd));
+				}
 			}
 		}
 		else {
@@ -62,9 +83,8 @@ void ARM::Debugger::executeNextARM(word instr) {
 				printf("MRS\n");
 			}
 			else if (((instr >> 12) & 0x3FF) == 0x29F && ((instr >> 23) & 0x1F) == 0x02 && (instr & 0xFF0) == 0) {
-				decompiled.instr = "MSR";
-				decompiled.arg0 = IS_SET(instr, 22) ? "SPSR_" : "CPSR";
-				//decompiled.arg0 += ", " + register_names[instr & 0xF];
+				if(IS_SET(instr, 22)) state->spsr = state->readReg(instr & 0xF);
+				else state->cpsr = state->readReg(instr & 0xF);
 			}
 			else if (((instr >> 12) & 0x3FF) == 0x28F && ((instr >> 23) & 0x1B) == 0x02) {
 				printf("MSR Flag bits only\n");
@@ -72,6 +92,7 @@ void ARM::Debugger::executeNextARM(word instr) {
 			else if ((instr & 0x0FFFFFF0) == 0x012FFF10) {
 				decompiled.instr = "BX";
 				//decompiled.arg0 = register_names[instr & 0xF];
+
 			}
 			else {
 				byte opcode = (instr >> 21) & 0xF;
@@ -95,15 +116,8 @@ void ARM::Debugger::executeNextARM(word instr) {
 
 				switch (opcode) {
 				case 0x4:
-					if (Rn == 0xF) {
-						decompiled.instr = "ADR";
-						//decompiled.arg0 = register_names[Rd] + ", #" + to_hex(state->pc + 8 + op2, 0);
-						decompiled.arg0 += std::string(" ; ") + ((op2 & 1) ? "(To THUMB)" : "(To ARM)");
-					}
-					else {
-						decompiled.instr = "ADD";
-						//decompiled.arg0 = register_names[Rd] + "," + register_names[Rn] + ", #" + to_hex(op2, 0);
-					}
+					if (Rn == 0xF) state->writeReg(Rd, state->pc + 4 + op2);
+					else state->writeReg(Rd, state->readReg(Rn) + 4 + op2);
 					break;
 				case 0x9:
 					decompiled.instr = "TEQ";
@@ -133,11 +147,13 @@ void ARM::Debugger::executeNextTHUMB(halfword instr) {
 void ARM::Debugger::executeNextInstruction() {
 	printf("[DEBUGGER][%.08X]", state->pc);
 	if (IS_SET(state->cpsr, 5)) {
-		executeNextTHUMB(state->read16(state->pc));
+		word instr = state->read16(state->pc);
 		state->pc += 2;
+		executeNextTHUMB(instr);
 	}
 	else {
-		executeNextARM(state->read32(state->pc));
+		word addr = state->read32(state->pc);
 		state->pc += 4;
+		executeNextARM(instr);
 	}
 }

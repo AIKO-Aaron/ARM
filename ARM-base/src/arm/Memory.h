@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 
+typedef uint64_t doubleword;
 typedef uint32_t word;
 typedef uint16_t halfword;
 typedef uint8_t byte;

@@ -7,6 +7,8 @@ namespace ARM {
 	
 	class Debugger {
 	private:
+		void setFlags(doubleword a, word b, word c);
+
 		void executeNextARM(word instr);
 		void executeNextTHUMB(halfword instr);
 	public:

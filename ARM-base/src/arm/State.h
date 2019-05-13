@@ -16,6 +16,18 @@ constexpr byte MODE_ABORT		= 0b10111;
 constexpr byte MODE_UNDEFINED	= 0b11011;
 constexpr byte MODE_SYSTEM		= 0b11111;
 
+constexpr byte FLAG_NEGATIVE	= 1 << 31;
+constexpr byte FLAG_ZERO		= 1 << 30;
+constexpr byte FLAG_CARRY		= 1 << 29;
+constexpr byte FLAG_OVERFLOW	= 1 << 28;
+
+constexpr byte FLAG_IRQ_DISABLE	= 1 << 7;
+constexpr byte FLAG_FIQ_DISABLE	= 1 << 6;
+
+#define SET_FLAG(flag) (state->cpsr |= (flag))
+#define CLEAR_FLAG(flag) (state->cpsr &= ~(flag))
+#define IS_FLAG_SET(flag) (state->cpsr & (flag)
+
 namespace ARM {
 
 	class State {
