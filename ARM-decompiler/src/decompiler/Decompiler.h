@@ -31,7 +31,7 @@ namespace ARM {
 
 		DecompiledInstr decompileInstruction();
 		DecompiledInstr decompileARM(word instr);
-		DecompiledInstr decompileTHUMB(halfword instr);
+		DecompiledInstr decompileTHUMB(hword instr);
 	};
 
 }

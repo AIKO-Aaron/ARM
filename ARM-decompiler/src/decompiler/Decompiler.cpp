@@ -90,7 +90,7 @@ ARM::DecompiledInstr ARM::Decompiler::decompileARM(word instr) {
 				decompiled.arg0 = register_names[Rd] + ", [" + register_names[Rn];
 
 				if (imm || offset != 0) { // LDR/STR Rd, [Rn, Rm SHIFT/IMM]
-					if (Rn == 0xF) {
+					if (!imm && Rn == 0xF) {
 						decompiled.arg0 += "] ; =" + to_hex(state->read32(state->pc + offset + 8));
 					}
 					else {
@@ -106,7 +106,8 @@ ARM::DecompiledInstr ARM::Decompiler::decompileARM(word instr) {
 
 			}
 			else if (((instr >> 16) & 0x3F) == 0x0F && ((instr >> 23) & 0x1F) == 0x02 && (instr & 0xFFF) == 0) {
-				printf("MRS\n");
+				decompiled.instr = "MRS";
+				decompiled.arg0 = register_names[(instr >> 12) & 0xF] + ", " + (IS_SET(instr, 22) ? "SPSR_" : "CPSR");
 			}
 			else if (((instr >> 12) & 0x3FF) == 0x29F && ((instr >> 23) & 0x1F) == 0x02 && (instr & 0xFF0) == 0) {
 				decompiled.instr = "MSR";
@@ -160,6 +161,10 @@ ARM::DecompiledInstr ARM::Decompiler::decompileARM(word instr) {
 					decompiled.instr = "CMP";
 					decompiled.arg0 = register_names[Rn] + ", #" + to_hex(op2, 0);
 					break;
+				case 0xC:
+					decompiled.instr = "ORR";
+					decompiled.arg0 = register_names[Rd] + "," + register_names[Rn] + ", #" + to_hex(op2, 0);
+					break;
 				case 0xD:
 					decompiled.instr = "MOV";
 					decompiled.arg0 = register_names[Rd] + ", #" + to_hex(op2, 0);
@@ -175,7 +180,7 @@ ARM::DecompiledInstr ARM::Decompiler::decompileARM(word instr) {
 	return decompiled;
 }
 
-ARM::DecompiledInstr ARM::Decompiler::decompileTHUMB(halfword instr) {
+ARM::DecompiledInstr ARM::Decompiler::decompileTHUMB(hword instr) {
 	DecompiledInstr decompiled;
 	
 	// printf("%.04X\n", instr);
@@ -402,7 +407,7 @@ ARM::DecompiledInstr ARM::Decompiler::decompileTHUMB(halfword instr) {
 			decompiled.instr = "BL";
 
 			state->pc += 2;
-			halfword p2 = state->read16(state->pc); // Read second instruction
+			hword p2 = state->read16(state->pc); // Read second instruction
 
 			word offset = 0;
 			offset += (instr & 0x7FF) << (IS_SET(instr, 11) ? 1 : 12);

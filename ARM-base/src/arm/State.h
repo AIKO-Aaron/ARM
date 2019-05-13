@@ -16,13 +16,13 @@ constexpr byte MODE_ABORT		= 0b10111;
 constexpr byte MODE_UNDEFINED	= 0b11011;
 constexpr byte MODE_SYSTEM		= 0b11111;
 
-constexpr byte FLAG_NEGATIVE	= 1 << 31;
-constexpr byte FLAG_ZERO		= 1 << 30;
-constexpr byte FLAG_CARRY		= 1 << 29;
-constexpr byte FLAG_OVERFLOW	= 1 << 28;
+constexpr word FLAG_NEGATIVE	= 1 << 31;
+constexpr word FLAG_ZERO		= 1 << 30;
+constexpr word FLAG_CARRY		= 1 << 29;
+constexpr word FLAG_OVERFLOW	= 1 << 28;
 
-constexpr byte FLAG_IRQ_DISABLE	= 1 << 7;
-constexpr byte FLAG_FIQ_DISABLE	= 1 << 6;
+constexpr word FLAG_IRQ_DISABLE	= 1 << 7;
+constexpr word FLAG_FIQ_DISABLE	= 1 << 6;
 
 #define SET_FLAG(flag) (state->cpsr |= (flag))
 #define CLEAR_FLAG(flag) (state->cpsr &= ~(flag))
@@ -57,8 +57,12 @@ namespace ARM {
 		word r12 = 0, r11 = 0, r10 = 0, r9 = 0, r8 = 0, r7 = 0, r6 = 0, r5 = 0, r4 = 0, r3 = 0, r2 = 0, r1 = 0, r0 = 0;
 
 		inline byte read8(word addr) { return mem->r8(addr); }
-		inline halfword read16(word addr) { return mem->r16(addr); }
+		inline hword read16(word addr) { return mem->r16(addr); }
 		inline word read32(word addr) { return mem->r32(addr); }
+
+		inline void write8(word addr, byte data) { return mem->w8(addr, data); }
+		inline void write16(word addr, hword data) { return mem->w16(addr, data); }
+		inline void write32(word addr, word data) { return mem->w32(addr, data); }
 
 		word readReg(byte num);
 		void writeReg(byte num, word val);
